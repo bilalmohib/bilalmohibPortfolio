@@ -1,23 +1,197 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Bilal Mohib — Full-Stack Developer",
+  description = "Muhammad Bilal Mohib — Full-Stack Developer. Next.js & React for SaaS founders. Top Rated on Upwork, 100% Job Success, 50+ projects shipped.",
+} = Astro.props;
+---
+
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
-	<body>
-		<slot />
-	</body>
-</html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Bilal Mohib | Engineering Collective" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preload" href="/avatar.jpg" as="image" />
+    <title>{title}</title>
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var dark =
+            stored === "dark" ||
+            (stored !== "light" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+    <script>
+      import Lenis from "lenis";
 
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>
+      const root = document.documentElement;
+      const header = document.getElementById("site-header");
+      const themeToggle = document.getElementById("theme-toggle");
+      const iconSun = document.getElementById("icon-sun");
+      const iconMoon = document.getElementById("icon-moon");
+      const menuToggle = document.getElementById("menu-toggle");
+      const mobileNav = document.getElementById("mobile-nav");
+      const iconMenu = document.getElementById("icon-menu");
+      const iconClose = document.getElementById("icon-close");
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      function isDark() {
+        return root.classList.contains("dark");
+      }
+
+      function syncThemeUi() {
+        const dark = isDark();
+        iconSun?.classList.toggle("hidden", !dark);
+        iconMoon?.classList.toggle("hidden", dark);
+        themeToggle?.setAttribute(
+          "aria-label",
+          dark ? "Switch to light mode" : "Switch to dark mode",
+        );
+      }
+
+      syncThemeUi();
+
+      themeToggle?.addEventListener("click", () => {
+        const next = isDark() ? "light" : "dark";
+        root.classList.toggle("dark", next === "dark");
+        localStorage.setItem("theme", next);
+        syncThemeUi();
+      });
+
+      let headerTicking = false;
+      const onScroll = () => {
+        if (headerTicking) return;
+        headerTicking = true;
+        requestAnimationFrame(() => {
+          if (header) {
+            const scrolled = window.scrollY > 12;
+            header.classList.toggle("glass", scrolled);
+            header.classList.toggle("border-b", scrolled);
+            header.classList.toggle("border-border/60", scrolled);
+            header.classList.toggle("bg-transparent", !scrolled);
+          }
+          headerTicking = false;
+        });
+      };
+      onScroll();
+
+      const lenis = reduce
+        ? null
+        : new Lenis({
+            autoRaf: true,
+            duration: 1.15,
+            easing: (t: number) => 1 - Math.pow(1 - t, 3),
+            smoothWheel: true,
+            wheelMultiplier: 0.95,
+            touchMultiplier: 1.1,
+            lerp: 0.09,
+          });
+
+      lenis?.on("scroll", onScroll);
+      window.addEventListener("scroll", onScroll, { passive: true });
+
+      function scrollToHash(hash: string, instant = false) {
+        const id = hash.replace("#", "");
+        if (!id) return;
+        const target = document.getElementById(id);
+        if (!target) return;
+        const offset = -72;
+        if (lenis && !instant) {
+          lenis.scrollTo(target, { offset, duration: 1.2 });
+        } else {
+          const top = target.getBoundingClientRect().top + window.scrollY + offset;
+          window.scrollTo({ top, behavior: instant || reduce ? "auto" : "smooth" });
+        }
+      }
+
+      document.querySelectorAll('a[href^="#"]').forEach((link) => {
+        link.addEventListener("click", (event) => {
+          const href = link.getAttribute("href");
+          if (!href || href === "#") return;
+          const target = document.getElementById(href.slice(1));
+          if (!target) return;
+          event.preventDefault();
+          history.pushState(null, "", href);
+          scrollToHash(href);
+        });
+      });
+
+      if (window.location.hash) {
+        requestAnimationFrame(() => scrollToHash(window.location.hash, true));
+      }
+
+      function setMenu(open: boolean) {
+        mobileNav?.classList.toggle("hidden", !open);
+        iconMenu?.classList.toggle("hidden", open);
+        iconClose?.classList.toggle("hidden", !open);
+        menuToggle?.setAttribute("aria-expanded", String(open));
+      }
+
+      menuToggle?.addEventListener("click", () => {
+        const open = mobileNav?.classList.contains("hidden");
+        setMenu(Boolean(open));
+      });
+
+      document.querySelectorAll(".mobile-link").forEach((link) => {
+        link.addEventListener("click", () => setMenu(false));
+      });
+
+      if (!reduce) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              const el = entry.target as HTMLElement;
+              const delay = el.dataset.delay || "0";
+              el.style.animationDelay = `${delay}s`;
+              el.classList.add("animate-fade-up");
+              observer.unobserve(el);
+            }
+          },
+          { rootMargin: "0px 0px -10% 0px", threshold: 0.05 },
+        );
+        document.querySelectorAll("[data-reveal]").forEach((el) => observer.observe(el));
+        window.setTimeout(() => {
+          document.querySelectorAll("[data-reveal]").forEach((el) => {
+            if (!el.classList.contains("animate-fade-up")) {
+              el.classList.add("animate-fade-up");
+              observer.unobserve(el);
+            }
+          });
+        }, 1200);
+      } else {
+        document.querySelectorAll("[data-reveal]").forEach((el) => {
+          (el as HTMLElement).style.opacity = "1";
+          (el as HTMLElement).style.transform = "none";
+        });
+      }
+    </script>
+  </body>
+</html>

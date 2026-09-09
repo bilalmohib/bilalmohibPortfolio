@@ -1,0 +1,50 @@
+---
+interface Props {
+  src: string;
+  url: string;
+  alt: string;
+  href?: string;
+  large?: boolean;
+}
+
+const { src, url, alt, href, large = false } = Astro.props;
+const host = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+const Wrapper = href ? "a" : "div";
+const external = Boolean(href?.startsWith("http"));
+---
+
+<Wrapper
+  href={href}
+  target={external ? "_blank" : undefined}
+  rel={external ? "noreferrer" : undefined}
+  class:list={[
+    "group block overflow-hidden rounded-3xl border border-border/70 bg-card elevation-2 transition-all",
+    href && "hover:-translate-y-1 hover:elevation-3",
+  ]}
+>
+  <div class="flex items-center gap-2 border-b border-border/70 bg-muted/70 px-3 py-2.5">
+    <span class="h-2.5 w-2.5 rounded-full bg-[#ff5f57]"></span>
+    <span class="h-2.5 w-2.5 rounded-full bg-[#febc2e]"></span>
+    <span class="h-2.5 w-2.5 rounded-full bg-[#28c840]"></span>
+    <span
+      class="ml-2 min-w-0 flex-1 truncate rounded-full bg-background/80 px-3 py-1 text-[11px] font-medium text-muted-foreground"
+    >
+      {host}
+    </span>
+  </div>
+  <div class:list={["relative overflow-hidden bg-muted", large ? "aspect-[16/9]" : "aspect-[16/10]"]}>
+    <img
+      src={src}
+      alt={alt}
+      class="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.03]"
+      loading={large ? "eager" : "lazy"}
+    />
+    {
+      href && (
+        <div class="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/55 via-black/0 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <span class="p-5 text-sm font-semibold text-white">View case study →</span>
+        </div>
+      )
+    }
+  </div>
+</Wrapper>
